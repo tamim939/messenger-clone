@@ -25,20 +25,23 @@ export default function App() {
       setUser(currentUser);
       
       if (currentUser) {
-        // Real-time listener for user profile data
+        // Ensure user document exists with basic info
         const userRef = doc(db, 'users', currentUser.uid);
-        
+        setDoc(userRef, {
+          uid: currentUser.uid,
+          displayName: currentUser.displayName || 'User',
+          email: currentUser.email,
+          photoURL: currentUser.photoURL,
+          status: 'online',
+          lastSeen: serverTimestamp()
+        }, { merge: true });
+
+        // Real-time listener for user profile data
         unsubscribeProfile = onSnapshot(userRef, (snapshot) => {
           if (snapshot.exists()) {
             setProfile(snapshot.data() as UserProfile);
           }
         });
-
-        // Update user status to online
-        setDoc(userRef, {
-          status: 'online',
-          lastSeen: serverTimestamp()
-        }, { merge: true });
         
         setLoading(false);
       } else {
@@ -119,7 +122,7 @@ export default function App() {
               className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center border-2 border-indigo-100 cursor-pointer overflow-hidden transform hover:scale-110 transition-transform"
             >
                {profile?.photoURL ? (
-                 <img src={profile.photoURL} alt="" className="w-full h-full object-cover" />
+                 <img src={profile.photoURL || undefined} alt="" className="w-full h-full object-cover" />
                ) : (
                  <span className="text-xs font-bold">{profile?.displayName?.substring(0, 2).toUpperCase() || '??'}</span>
                )}

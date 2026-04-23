@@ -86,49 +86,48 @@ export default function ProfileModal({ onClose, user }: ProfileModalProps) {
 
     // Limit to 5MB
     if (file.size > 5 * 1024 * 1024) {
-      alert('File is too large! Please choose an image smaller than 5MB.');
+      alert('পিকচারটি অনেক বড়! দয়া করে ৫ মেগাবাইটের কম সাইজের ছবি দিন।');
       return;
     }
 
     setUploading(true);
-    setUploadProgress(0);
+    setUploadProgress(10); // Start with 10% to show activity
+    console.log('Upload starting for user:', user.uid);
     
     try {
       const storageRef = ref(storage, `avatars/${user.uid}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      
+      // Use uploadBytes instead of uploadBytesResumable for better reliability in some networks
+      await uploadBytes(storageRef, file);
+      setUploadProgress(90); // Jump to 90% after bytes are sent
 
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = snapshot.totalBytes > 0 
-            ? Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100) 
-            : 0;
-          setUploadProgress(progress);
-        }, 
-        (error) => {
-          console.error('Upload failed:', error);
-          alert(`Upload failed: ${error.message}`);
-          setUploading(false);
-          setUploadProgress(0);
-        }, 
-        async () => {
-          const url = await getDownloadURL(uploadTask.snapshot.ref);
-          const userRef = doc(db, 'users', user.uid);
-          await setDoc(userRef, { photoURL: url }, { merge: true });
+      const url = await getDownloadURL(storageRef);
+      console.log('Download URL obtained:', url);
 
-          if (auth.currentUser) {
-            await updateProfile(auth.currentUser, { photoURL: url });
-          }
+      const userRef = doc(db, 'users', user.uid);
+      await setDoc(userRef, { photoURL: url }, { merge: true });
 
-          setProfile(prev => prev ? { ...prev, photoURL: url } : null);
-          setUploading(false);
-          setUploadProgress(0);
-          alert('Photo updated successfully!');
-        }
-      );
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, { photoURL: url });
+      }
+
+      setProfile(prev => prev ? { ...prev, photoURL: url } : null);
+      setUploadProgress(100);
+      alert('প্রোফাইল পিকচার সফলভাবে আপডেট হয়েছে!');
     } catch (err: any) {
-      console.error('Error starting upload:', err);
-      alert(`Error starting upload: ${err.message}`);
+      console.error('Critical Upload Error:', err);
+      let errorMsg = 'আপলোড ব্যর্থ হয়েছে।';
+      
+      if (err.code === 'storage/unauthorized') {
+        errorMsg += ' ফায়ারবেস স্টোরেজ পারমিশন নেই। দয়া করে ডেভেলপারকে বিষয়টি জানান।';
+      } else {
+        errorMsg += ` সমস্যা: ${err.message}`;
+      }
+      
+      alert(errorMsg);
+    } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -157,7 +156,7 @@ export default function ProfileModal({ onClose, user }: ProfileModalProps) {
             <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
               <div className="w-32 h-32 rounded-full border-4 border-indigo-50 bg-indigo-50 overflow-hidden shadow-inner flex items-center justify-center">
                 {profile?.photoURL ? (
-                  <img src={profile.photoURL} alt="" className="w-full h-full object-cover" />
+                  <img src={profile.photoURL || undefined} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <UserIcon size={64} className="text-indigo-200" />
                 )}

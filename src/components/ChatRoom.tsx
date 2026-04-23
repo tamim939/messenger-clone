@@ -141,7 +141,7 @@ export default function ChatRoom({ chat, onBack }: ChatRoomProps) {
           return (
             <div key={msg.id} className={`flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-3`}>
               <img 
-                src={isMe ? (auth.currentUser?.photoURL || '') : (chat.otherUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${chat.otherUser.uid}`)} 
+                src={isMe ? (auth.currentUser?.photoURL || undefined) : (chat.otherUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${chat.otherUser.uid}`)} 
                 alt=""
                 className="w-8 h-8 rounded-full shadow-sm bg-slate-200 flex-shrink-0"
               />
@@ -159,7 +159,7 @@ export default function ChatRoom({ chat, onBack }: ChatRoomProps) {
                   {msg.mediaUrl && (
                     <div className="mb-2 rounded-xl overflow-hidden">
                       {msg.mediaType === 'image' && (
-                        <img src={msg.mediaUrl} alt="sent image" className="max-h-60 w-full object-cover" />
+                        <img src={msg.mediaUrl || undefined} alt="sent image" className="max-h-60 w-full object-cover" />
                       )}
                       {msg.mediaType === 'video' && (
                         <video src={msg.mediaUrl} controls className="max-h-60" />

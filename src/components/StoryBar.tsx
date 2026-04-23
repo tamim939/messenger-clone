@@ -93,7 +93,7 @@ export default function StoryBar() {
           ) : (
             <>
               {auth.currentUser?.photoURL ? (
-                <img src={auth.currentUser.photoURL} alt="" className="w-full h-full object-cover opacity-50 group-hover:opacity-30" />
+                <img src={auth.currentUser.photoURL || undefined} alt="" className="w-full h-full object-cover opacity-50 group-hover:opacity-30" />
               ) : (
                 <Plus size={24} className="text-slate-400 group-hover:text-indigo-500" />
               )}
@@ -189,7 +189,7 @@ export default function StoryBar() {
 
                 {stories[selectedStoryIndex].mediaType === 'image' ? (
                   <img 
-                    src={stories[selectedStoryIndex].mediaUrl} 
+                    src={stories[selectedStoryIndex].mediaUrl || undefined} 
                     alt="" 
                     className="w-full h-full object-cover"
                   />

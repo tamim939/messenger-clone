@@ -6,7 +6,8 @@ import {
   where, 
   onSnapshot, 
   orderBy,
-  getDocs,
+  getDoc,
+  doc,
   addDoc,
   serverTimestamp
 } from 'firebase/firestore';
@@ -39,9 +40,15 @@ export default function ChatList({ onChatSelect, activeChatId }: ChatListProps) 
         const data = docSnap.data() as Chat;
         const otherUserId = data.participants.find(p => p !== auth.currentUser?.uid);
         
-        // Fetch other user profile
-        const userDoc = await getDocs(query(collection(db, 'users'), where('uid', '==', otherUserId)));
-        const otherUser = userDoc.docs[0]?.data() as UserProfile;
+        if (!otherUserId) return null;
+
+        // Fetch other user profile by Document ID (much faster and more reliable)
+        const userDoc = await getDoc(doc(db, 'users', otherUserId));
+        const otherUser = userDoc.exists() ? userDoc.data() as UserProfile : {
+          uid: otherUserId,
+          displayName: 'User',
+          email: ''
+        } as UserProfile;
         
         return {
           ...data,
@@ -50,7 +57,7 @@ export default function ChatList({ onChatSelect, activeChatId }: ChatListProps) 
         };
       }));
       
-      setChats(chatData.filter(c => c.otherUser));
+      setChats(chatData.filter(c => c !== null) as (Chat & { otherUser: UserProfile })[]);
       setLoading(false);
     });
 
