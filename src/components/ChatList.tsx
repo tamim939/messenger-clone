@@ -59,20 +59,45 @@ export default function ChatList({ onChatSelect, activeChatId }: ChatListProps) 
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
+    const term = searchQuery.trim();
+    if (!term) return;
 
-    const q = query(
+    // Search by Display Name
+    const nameQ = query(
       collection(db, 'users'),
-      where('displayName', '>=', searchQuery),
-      where('displayName', '<=', searchQuery + '\uf8ff')
+      where('displayName', '>=', term),
+      where('displayName', '<=', term + '\uf8ff')
     );
 
-    const querySnapshot = await getDocs(q);
-    const results = querySnapshot.docs
-      .map(doc => doc.data() as UserProfile)
-      .filter(u => u.uid !== auth.currentUser?.uid);
+    // Search by Username
+    const usernameQ = query(
+      collection(db, 'users'),
+      where('username', '>=', term.toLowerCase()),
+      where('username', '<=', term.toLowerCase() + '\uf8ff')
+    );
+
+    const [nameSnap, usernameSnap] = await Promise.all([
+      getDocs(nameQ),
+      getDocs(usernameQ)
+    ]);
+
+    const resultsMap = new Map<string, UserProfile>();
     
-    setSearchResults(results);
+    nameSnap.docs.forEach(doc => {
+      const data = doc.data() as UserProfile;
+      if (data.uid !== auth.currentUser?.uid) {
+        resultsMap.set(data.uid, data);
+      }
+    });
+
+    usernameSnap.docs.forEach(doc => {
+      const data = doc.data() as UserProfile;
+      if (data.uid !== auth.currentUser?.uid) {
+        resultsMap.set(data.uid, data);
+      }
+    });
+    
+    setSearchResults(Array.from(resultsMap.values()));
   };
 
   const startNewChat = async (user: UserProfile) => {
