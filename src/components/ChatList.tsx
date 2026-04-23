@@ -11,7 +11,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore';
 import { UserProfile, Chat } from '../types';
-import { Search, Plus, MessageCircle } from 'lucide-react';
+import { Search, Plus, MessageCircle, X } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface ChatListProps {
@@ -115,8 +115,13 @@ export default function ChatList({ onChatSelect, activeChatId }: ChatListProps) 
   };
 
   const startNewChat = async (user: UserProfile) => {
+    if (!auth.currentUser) return;
+    
     // Check if chat already exists
-    const existingChat = chats.find(c => c.participants.includes(user.uid));
+    const existingChat = chats.find(c => 
+      c.participants.includes(user.uid) && c.participants.includes(auth.currentUser!.uid)
+    );
+
     if (existingChat) {
       onChatSelect(existingChat);
       setSearchQuery('');
@@ -124,21 +129,27 @@ export default function ChatList({ onChatSelect, activeChatId }: ChatListProps) 
       return;
     }
 
-    // Create new chat
-    const docRef = await addDoc(collection(db, 'chats'), {
-      participants: [auth.currentUser?.uid, user.uid],
-      lastMessage: '',
-      lastMessageAt: serverTimestamp(),
-      unreadCount: { [user.uid]: 0, [auth.currentUser!.uid]: 0 }
-    });
+    try {
+      // Create new chat
+      const docRef = await addDoc(collection(db, 'chats'), {
+        participants: [auth.currentUser.uid, user.uid],
+        lastMessage: '',
+        lastMessageAt: serverTimestamp(),
+        unreadCount: { [user.uid]: 0, [auth.currentUser.uid]: 0 }
+      });
 
-    onChatSelect({
-      id: docRef.id,
-      participants: [auth.currentUser!.uid, user.uid],
-      otherUser: user
-    });
-    setSearchQuery('');
-    setSearchResults([]);
+      setSearchQuery('');
+      setSearchResults([]);
+
+      onChatSelect({
+        id: docRef.id,
+        participants: [auth.currentUser.uid, user.uid],
+        otherUser: user
+      });
+    } catch (err) {
+      console.error("Error creating chat:", err);
+      alert("Failed to start chat");
+    }
   };
 
   return (
@@ -150,9 +161,19 @@ export default function ChatList({ onChatSelect, activeChatId }: ChatListProps) 
             placeholder="Search by name or @username..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-indigo-50/50 border border-indigo-100/50 rounded-2xl py-3 px-5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-indigo-300 font-medium"
+            className="w-full bg-indigo-50/50 border border-indigo-100/50 rounded-2xl py-3 px-5 pr-20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-indigo-300 font-medium"
           />
-          <Search size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-indigo-400 group-focus-within:text-indigo-600 transition-colors" />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+            {searchQuery && (
+              <button 
+                onClick={() => { setSearchQuery(''); setSearchResults([]); }}
+                className="p-1 hover:bg-indigo-100 rounded-full text-indigo-400 hover:text-indigo-600 transition-all"
+              >
+                <X size={16} />
+              </button>
+            )}
+            <Search size={18} className="text-indigo-400 group-focus-within:text-indigo-600 transition-colors" />
+          </div>
         </div>
       </div>
 
