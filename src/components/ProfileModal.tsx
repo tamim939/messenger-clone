@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { db, auth, storage } from '../lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { UserProfile } from '../types';
 import { X, Camera, Save, User as UserIcon, Tag, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -19,6 +19,7 @@ export default function ProfileModal({ onClose, user }: ProfileModalProps) {
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -83,31 +84,47 @@ export default function ProfileModal({ onClose, user }: ProfileModalProps) {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Limit to 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File is too large! Please choose an image smaller than 5MB.');
+      return;
+    }
+
     setUploading(true);
-    console.log('File selected, starting upload process...');
+    setUploadProgress(0);
+    
     try {
       const storageRef = ref(storage, `avatars/${user.uid}`);
-      console.log('Storage reference created, sending bytes...');
-      const uploadResult = await uploadBytes(storageRef, file);
-      console.log('Upload success result:', uploadResult);
-      
-      console.log('Getting download URL...');
-      const url = await getDownloadURL(storageRef);
-      console.log('Download URL obtained:', url);
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
-      const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, { photoURL: url }, { merge: true });
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        }, 
+        (error) => {
+          console.error('Upload failed:', error);
+          alert(`Upload failed: ${error.message}`);
+          setUploading(false);
+        }, 
+        async () => {
+          const url = await getDownloadURL(uploadTask.snapshot.ref);
+          const userRef = doc(db, 'users', user.uid);
+          await setDoc(userRef, { photoURL: url }, { merge: true });
 
-      if (auth.currentUser) {
-        await updateProfile(auth.currentUser, { photoURL: url });
-      }
+          if (auth.currentUser) {
+            await updateProfile(auth.currentUser, { photoURL: url });
+          }
 
-      setProfile(prev => prev ? { ...prev, photoURL: url } : null);
-      alert('Photo updated!');
+          setProfile(prev => prev ? { ...prev, photoURL: url } : null);
+          setUploading(false);
+          setUploadProgress(0);
+          alert('Photo updated successfully!');
+        }
+      );
     } catch (err: any) {
-      console.error('Upload error detail:', err);
-      alert(`Failed to upload image: ${err.message || 'Unknown error'}. Please check your Firebase Storage rules.`);
-    } finally {
+      console.error('Error starting upload:', err);
+      alert(`Error starting upload: ${err.message}`);
       setUploading(false);
     }
   };
@@ -142,8 +159,34 @@ export default function ProfileModal({ onClose, user }: ProfileModalProps) {
                   <UserIcon size={64} className="text-indigo-200" />
                 )}
                 {uploading && (
-                  <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                  <div className="absolute inset-0 bg-white/60 flex flex-col items-center justify-center">
+                    <div className="relative w-12 h-12">
+                      <svg className="w-full h-full transform -rotate-90">
+                        <circle
+                          cx="24"
+                          cy="24"
+                          r="20"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="transparent"
+                          className="text-slate-200"
+                        />
+                        <circle
+                          cx="24"
+                          cy="24"
+                          r="20"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="transparent"
+                          strokeDasharray={125.6}
+                          strokeDashoffset={125.6 - (125.6 * uploadProgress) / 100}
+                          className="text-indigo-600 transition-all duration-300"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-indigo-600">
+                        {Math.round(uploadProgress)}%
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

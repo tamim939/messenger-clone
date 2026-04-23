@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 import Auth from './components/Auth';
 import ChatList from './components/ChatList';
 import ChatRoom from './components/ChatRoom';
@@ -13,26 +13,44 @@ import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedChat, setSelectedChat] = useState<(Chat & { otherUser: UserProfile }) | null>(null);
   const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    let unsubscribeProfile: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      setLoading(false);
       
       if (currentUser) {
-        // Update user status to online
+        // Real-time listener for user profile data
         const userRef = doc(db, 'users', currentUser.uid);
+        
+        unsubscribeProfile = onSnapshot(userRef, (snapshot) => {
+          if (snapshot.exists()) {
+            setProfile(snapshot.data() as UserProfile);
+          }
+        });
+
+        // Update user status to online
         setDoc(userRef, {
           status: 'online',
           lastSeen: serverTimestamp()
         }, { merge: true });
+        
+        setLoading(false);
+      } else {
+        setProfile(null);
+        setLoading(false);
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeProfile) unsubscribeProfile();
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -100,7 +118,11 @@ export default function App() {
               onClick={() => setShowProfile(true)}
               className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center border-2 border-indigo-100 cursor-pointer overflow-hidden transform hover:scale-110 transition-transform"
             >
-               {user.photoURL ? <img src={user.photoURL} alt="" /> : <span className="text-xs font-bold">{user.displayName?.substring(0, 2).toUpperCase()}</span>}
+               {profile?.photoURL ? (
+                 <img src={profile.photoURL} alt="" className="w-full h-full object-cover" />
+               ) : (
+                 <span className="text-xs font-bold">{profile?.displayName?.substring(0, 2).toUpperCase() || '??'}</span>
+               )}
             </div>
           </div>
           <StoryBar />
