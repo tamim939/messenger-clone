@@ -57,10 +57,20 @@ export default function ChatList({ onChatSelect, activeChatId }: ChatListProps) 
     return () => unsubscribe();
   }, []);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      handleSearchAuto();
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
+  const handleSearchAuto = async () => {
     const term = searchQuery.trim();
-    if (!term) return;
+    if (!term) {
+      setSearchResults([]);
+      return;
+    }
 
     // Search by Display Name
     const nameQ = query(
@@ -76,28 +86,32 @@ export default function ChatList({ onChatSelect, activeChatId }: ChatListProps) 
       where('username', '<=', term.toLowerCase() + '\uf8ff')
     );
 
-    const [nameSnap, usernameSnap] = await Promise.all([
-      getDocs(nameQ),
-      getDocs(usernameQ)
-    ]);
+    try {
+      const [nameSnap, usernameSnap] = await Promise.all([
+        getDocs(nameQ),
+        getDocs(usernameQ)
+      ]);
 
-    const resultsMap = new Map<string, UserProfile>();
-    
-    nameSnap.docs.forEach(doc => {
-      const data = doc.data() as UserProfile;
-      if (data.uid !== auth.currentUser?.uid) {
-        resultsMap.set(data.uid, data);
-      }
-    });
+      const resultsMap = new Map<string, UserProfile>();
+      
+      nameSnap.docs.forEach(doc => {
+        const data = doc.data() as UserProfile;
+        if (data.uid !== auth.currentUser?.uid) {
+          resultsMap.set(data.uid, data);
+        }
+      });
 
-    usernameSnap.docs.forEach(doc => {
-      const data = doc.data() as UserProfile;
-      if (data.uid !== auth.currentUser?.uid) {
-        resultsMap.set(data.uid, data);
-      }
-    });
-    
-    setSearchResults(Array.from(resultsMap.values()));
+      usernameSnap.docs.forEach(doc => {
+        const data = doc.data() as UserProfile;
+        if (data.uid !== auth.currentUser?.uid) {
+          resultsMap.set(data.uid, data);
+        }
+      });
+      
+      setSearchResults(Array.from(resultsMap.values()));
+    } catch (err) {
+      console.error("Search error:", err);
+    }
   };
 
   const startNewChat = async (user: UserProfile) => {
@@ -130,16 +144,16 @@ export default function ChatList({ onChatSelect, activeChatId }: ChatListProps) 
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="p-4 bg-white sticky top-0 z-10 border-b border-slate-50">
-        <form onSubmit={handleSearch} className="relative">
+        <div className="relative group">
           <input 
             type="text" 
-            placeholder="Search users..."
+            placeholder="Search by name or @username..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-300"
+            className="w-full bg-indigo-50/50 border border-indigo-100/50 rounded-2xl py-3 px-5 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-indigo-300 font-medium"
           />
-          <Search size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300" />
-        </form>
+          <Search size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-indigo-400 group-focus-within:text-indigo-600 transition-colors" />
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-0 py-2">

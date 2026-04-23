@@ -99,7 +99,9 @@ export default function ProfileModal({ onClose, user }: ProfileModalProps) {
 
       uploadTask.on('state_changed', 
         (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          const progress = snapshot.totalBytes > 0 
+            ? Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100) 
+            : 0;
           setUploadProgress(progress);
         }, 
         (error) => {
