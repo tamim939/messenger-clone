@@ -117,38 +117,46 @@ export default function ChatList({ onChatSelect, activeChatId }: ChatListProps) 
   const startNewChat = async (user: UserProfile) => {
     if (!auth.currentUser) return;
     
-    // Check if chat already exists
+    // Clear search immediately to feel fast
+    setSearchQuery('');
+    setSearchResults([]);
+
+    // Check if chat already exists in our current list
     const existingChat = chats.find(c => 
-      c.participants.includes(user.uid) && c.participants.includes(auth.currentUser!.uid)
+      c.participants && c.participants.includes(user.uid) && c.participants.includes(auth.currentUser!.uid)
     );
 
     if (existingChat) {
       onChatSelect(existingChat);
-      setSearchQuery('');
-      setSearchResults([]);
       return;
     }
 
     try {
-      // Create new chat
-      const docRef = await addDoc(collection(db, 'chats'), {
+      console.log('Creating new chat between:', auth.currentUser.uid, 'and', user.uid);
+      
+      // Create new chat document
+      const chatData = {
         participants: [auth.currentUser.uid, user.uid],
         lastMessage: '',
         lastMessageAt: serverTimestamp(),
         unreadCount: { [user.uid]: 0, [auth.currentUser.uid]: 0 }
-      });
+      };
 
-      setSearchQuery('');
-      setSearchResults([]);
+      const docRef = await addDoc(collection(db, 'chats'), chatData);
+      console.log('New chat created with ID:', docRef.id);
 
+      // Select the chat immediately with a temporary object
+      // (The onSnapshot listener will soon replace this with the official backend data)
       onChatSelect({
         id: docRef.id,
-        participants: [auth.currentUser.uid, user.uid],
+        ...chatData,
+        lastMessageAt: null, // serverTimestamp hasn't resolved yet
         otherUser: user
-      });
-    } catch (err) {
-      console.error("Error creating chat:", err);
-      alert("Failed to start chat");
+      } as any);
+
+    } catch (err: any) {
+      console.error("Critical error in startNewChat:", err);
+      alert(`Chat start failed: ${err.message || 'Check your internet or Firebase console'}`);
     }
   };
 

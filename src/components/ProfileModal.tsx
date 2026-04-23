@@ -57,7 +57,7 @@ export default function ProfileModal({ onClose, user }: ProfileModalProps) {
       // Use setDoc with { merge: true } to ensure it works even if doc doesn't exist
       await setDoc(userRef, {
         displayName,
-        username,
+        username: username.toLowerCase().replace(/\s/g, ''),
         bio,
         updatedAt: new Date().toISOString()
       }, { merge: true });
@@ -108,6 +108,7 @@ export default function ProfileModal({ onClose, user }: ProfileModalProps) {
           console.error('Upload failed:', error);
           alert(`Upload failed: ${error.message}`);
           setUploading(false);
+          setUploadProgress(0);
         }, 
         async () => {
           const url = await getDownloadURL(uploadTask.snapshot.ref);
