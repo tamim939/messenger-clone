@@ -1,0 +1,6 @@
+{
+  "name": "Social Messenger",
+  "description": "A real-time chat application with group messaging, stories, and media sharing capabilities (photos, videos, and voice).",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
