@@ -83,59 +83,59 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-[#000000] flex items-center justify-center p-4 selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4 selection:bg-indigo-500/30">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-[#000000] rounded-[40px] p-10 border border-white/10"
+        className="w-full max-w-md bg-white rounded-[40px] p-10 shadow-2xl shadow-indigo-100 border border-slate-100"
       >
         <div className="flex flex-col items-center mb-10">
-          <div className="w-20 h-20 bg-indigo-600 rounded-[30px] flex items-center justify-center text-white mb-6 shadow-2xl shadow-indigo-500/30">
+          <div className="w-20 h-20 bg-indigo-600 rounded-[30px] flex items-center justify-center text-white mb-6 shadow-2xl shadow-indigo-600/30">
             <MessageSquare size={40} />
           </div>
-          <h1 className="text-4xl font-black text-white tracking-tighter uppercase">messenger</h1>
-          <p className="text-slate-500 mt-3 font-bold uppercase tracking-widest text-[10px]">{isLogin ? 'Sign in to your account' : 'Register a new account'}</p>
+          <h1 className="text-4xl font-black text-indigo-600 tracking-tighter uppercase">messenger</h1>
+          <p className="text-slate-400 mt-3 font-bold uppercase tracking-widest text-[10px]">{isLogin ? 'Sign in to your account' : 'Register a new account'}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {!isLogin && (
             <div className="space-y-1.5">
-              <label className="block text-[10px] uppercase font-black text-slate-600 tracking-[0.2em] ml-4">Full Name</label>
+              <label className="block text-[10px] uppercase font-black text-slate-400 tracking-[0.2em] ml-4">Full Name</label>
               <input 
                 type="text" 
                 required 
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full px-6 py-4 bg-white/5 border-none rounded-3xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 text-white font-medium"
+                className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-3xl focus:ring-2 focus:ring-indigo-100 outline-none transition-all placeholder:text-slate-300 text-slate-800 font-bold"
                 placeholder="Jon doe"
               />
             </div>
           )}
           <div className="space-y-1.5">
-            <label className="block text-[10px] uppercase font-black text-slate-600 tracking-[0.2em] ml-4">Email Address</label>
+            <label className="block text-[10px] uppercase font-black text-slate-400 tracking-[0.2em] ml-4">Email Address</label>
             <input 
               type="email" 
               required 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-6 py-4 bg-white/5 border-none rounded-3xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 text-white font-medium"
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-3xl focus:ring-2 focus:ring-indigo-100 outline-none transition-all placeholder:text-slate-300 text-slate-800 font-bold"
               placeholder="name@example.com"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="block text-[10px] uppercase font-black text-slate-600 tracking-[0.2em] ml-4">Password</label>
+            <label className="block text-[10px] uppercase font-black text-slate-400 tracking-[0.2em] ml-4">Password</label>
             <input 
               type="password" 
               required 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-6 py-4 bg-white/5 border-none rounded-3xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 text-white font-medium"
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-3xl focus:ring-2 focus:ring-indigo-100 outline-none transition-all placeholder:text-slate-300 text-slate-800 font-bold"
               placeholder="••••••••"
             />
           </div>
 
           {error && (
-            <p className="text-red-500 text-[11px] font-bold bg-red-500/10 p-4 rounded-3xl border border-red-500/20">
+            <p className="text-red-500 text-[11px] font-bold bg-red-50 p-4 rounded-3xl border border-red-100">
               {error}
             </p>
           )}
@@ -150,16 +150,16 @@ export default function Auth() {
         </form>
 
         <div className="mt-10 flex items-center gap-4">
-          <div className="h-px bg-white/5 flex-1"></div>
-          <span className="text-slate-700 text-[10px] font-black uppercase tracking-widest">Connect with</span>
-          <div className="h-px bg-white/5 flex-1"></div>
+          <div className="h-px bg-slate-100 flex-1"></div>
+          <span className="text-slate-300 text-[10px] font-black uppercase tracking-widest">Connect with</span>
+          <div className="h-px bg-slate-100 flex-1"></div>
         </div>
 
         <button 
           onClick={handleGoogleSignIn}
-          className="w-full bg-white/5 border border-white/5 text-white py-4 rounded-3xl font-bold hover:bg-white/10 transition-all flex items-center justify-center gap-3 mt-8 text-sm"
+          className="w-full bg-white border border-slate-200 text-slate-600 py-4 rounded-3xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-3 mt-8 text-sm group"
         >
-          <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100" />
+          <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 group-hover:scale-110 transition-transform" />
           Continue with Google
         </button>
 

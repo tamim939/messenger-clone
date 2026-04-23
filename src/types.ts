@@ -7,6 +7,7 @@ export interface UserProfile {
   status?: string;
   lastSeen?: any;
   bio?: string;
+  blockedUsers?: string[];
 }
 
 export interface Chat {
@@ -15,6 +16,9 @@ export interface Chat {
   lastMessage?: string;
   lastMessageAt?: any;
   unreadCount?: Record<string, number>;
+  isPinned?: Record<string, boolean>; // userId -> isPinned
+  isArchived?: Record<string, boolean>; // userId -> isArchived
+  mutedUntil?: Record<string, any>; // userId -> timestamp
 }
 
 export interface Message {
@@ -35,4 +39,6 @@ export interface Story {
   mediaType: 'image' | 'video';
   createdAt: any;
   expiresAt: any;
+  reactions?: Record<string, string>; // userId -> emoji
+  commentCount?: number;
 }

@@ -1,10 +1,10 @@
 {
-  "projectId": "daily-earn-bd-7d0ec",
-  "appId": "1:1015024045016:web:96c9b44174d66a8139c0ad",
-  "apiKey": "AIzaSyBu4NzH82q9kvufvycBhoM6k3i5qfliSqE",
-  "authDomain": "daily-earn-bd-7d0ec.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-8be9f61b-60f6-41f4-bf10-c19c9e26f1a8",
-  "storageBucket": "daily-earn-bd-7d0ec.firebasestorage.app",
-  "messagingSenderId": "1015024045016",
-  "measurementId": ""
+  "projectId": "my-wallet-ee004",
+  "appId": "1:454310292328:web:b33073a01c7bef0ead04dd",
+  "apiKey": "AIzaSyBXgun8xHfU6gv18VJWZv0RA2BAaEQJZZQ",
+  "authDomain": "my-wallet-ee004.firebaseapp.com",
+  "databaseURL": "https://my-wallet-ee004-default-rtdb.firebaseio.com",
+  "storageBucket": "my-wallet-ee004.firebasestorage.app",
+  "messagingSenderId": "454310292328",
+  "firestoreDatabaseId": ""
 }

@@ -91,43 +91,44 @@ export default function ProfileModal({ onClose, user }: ProfileModalProps) {
     }
 
     setUploading(true);
-    setUploadProgress(10); // Start with 10% to show activity
+    setUploadProgress(0);
     console.log('Upload starting for user:', user.uid);
     
     try {
       const storageRef = ref(storage, `avatars/${user.uid}`);
-      
-      // Use uploadBytes instead of uploadBytesResumable for better reliability in some networks
-      await uploadBytes(storageRef, file);
-      setUploadProgress(90); // Jump to 90% after bytes are sent
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
-      const url = await getDownloadURL(storageRef);
-      console.log('Download URL obtained:', url);
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+          console.log('Upload is ' + progress + '% done');
+        }, 
+        (error) => {
+          console.error('Upload task failed:', error);
+          alert('আপলোড ব্যর্থ হয়েছে। দয়া করে ফায়ারবেস স্টোরেজ রুলস চেক করুন।');
+          setUploading(false);
+        }, 
+        async () => {
+          const url = await getDownloadURL(uploadTask.snapshot.ref);
+          console.log('Download URL obtained:', url);
 
-      const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, { photoURL: url }, { merge: true });
+          const userRef = doc(db, 'users', user.uid);
+          await setDoc(userRef, { photoURL: url }, { merge: true });
 
-      if (auth.currentUser) {
-        await updateProfile(auth.currentUser, { photoURL: url });
-      }
+          if (auth.currentUser) {
+            await updateProfile(auth.currentUser, { photoURL: url });
+          }
 
-      setProfile(prev => prev ? { ...prev, photoURL: url } : null);
-      setUploadProgress(100);
-      alert('প্রোফাইল পিকচার সফলভাবে আপডেট হয়েছে!');
+          setProfile(prev => prev ? { ...prev, photoURL: url } : null);
+          setUploading(false);
+          alert('প্রোফাইল পিকচার সফলভাবে আপডেট হয়েছে!');
+        }
+      );
     } catch (err: any) {
       console.error('Critical Upload Error:', err);
-      let errorMsg = 'আপলোড ব্যর্থ হয়েছে।';
-      
-      if (err.code === 'storage/unauthorized') {
-        errorMsg += ' ফায়ারবেস স্টোরেজ পারমিশন নেই। দয়া করে ডেভেলপারকে বিষয়টি জানান।';
-      } else {
-        errorMsg += ` সমস্যা: ${err.message}`;
-      }
-      
-      alert(errorMsg);
-    } finally {
+      alert(`সমস্যা: ${err.message}`);
       setUploading(false);
-      setUploadProgress(0);
     }
   };
 
