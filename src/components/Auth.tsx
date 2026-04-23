@@ -83,89 +83,93 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#000000] flex items-center justify-center p-4 selection:bg-indigo-500/30">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 border border-slate-100"
+        className="w-full max-w-md bg-[#000000] rounded-[40px] p-10 border border-white/10"
       >
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mb-4 shadow-lg shadow-indigo-100">
-            <MessageSquare size={32} />
+        <div className="flex flex-col items-center mb-10">
+          <div className="w-20 h-20 bg-indigo-600 rounded-[30px] flex items-center justify-center text-white mb-6 shadow-2xl shadow-indigo-500/30">
+            <MessageSquare size={40} />
           </div>
-          <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Connectify</h1>
-          <p className="text-slate-500 mt-2 font-medium">{isLogin ? 'Welcome back!' : 'Create your account'}</p>
+          <h1 className="text-4xl font-black text-white tracking-tighter uppercase">messenger</h1>
+          <p className="text-slate-500 mt-3 font-bold uppercase tracking-widest text-[10px]">{isLogin ? 'Sign in to your account' : 'Register a new account'}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {!isLogin && (
-            <div>
-              <label className="block text-[11px] uppercase font-bold text-slate-400 tracking-widest mb-1 ml-1">Full Name</label>
+            <div className="space-y-1.5">
+              <label className="block text-[10px] uppercase font-black text-slate-600 tracking-[0.2em] ml-4">Full Name</label>
               <input 
                 type="text" 
                 required 
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder:text-slate-300"
+                className="w-full px-6 py-4 bg-white/5 border-none rounded-3xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 text-white font-medium"
                 placeholder="Jon doe"
               />
             </div>
           )}
-          <div>
-            <label className="block text-[11px] uppercase font-bold text-slate-400 tracking-widest mb-1 ml-1">Email Address</label>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] uppercase font-black text-slate-600 tracking-[0.2em] ml-4">Email Address</label>
             <input 
               type="email" 
               required 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder:text-slate-300"
+              className="w-full px-6 py-4 bg-white/5 border-none rounded-3xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 text-white font-medium"
               placeholder="name@example.com"
             />
           </div>
-          <div>
-            <label className="block text-[11px] uppercase font-bold text-slate-400 tracking-widest mb-1 ml-1">Password</label>
+          <div className="space-y-1.5">
+            <label className="block text-[10px] uppercase font-black text-slate-600 tracking-[0.2em] ml-4">Password</label>
             <input 
               type="password" 
               required 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all placeholder:text-slate-300"
+              className="w-full px-6 py-4 bg-white/5 border-none rounded-3xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-700 text-white font-medium"
               placeholder="••••••••"
             />
           </div>
 
-          {error && <p className="text-red-500 text-xs font-bold bg-red-50 p-3 rounded-xl border border-red-100 mt-2">{error}</p>}
+          {error && (
+            <p className="text-red-500 text-[11px] font-bold bg-red-500/10 p-4 rounded-3xl border border-red-500/20">
+              {error}
+            </p>
+          )}
 
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-indigo-600 text-white py-3.5 rounded-2xl font-bold hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 mt-4 shadow-lg shadow-indigo-100 disabled:opacity-50 active:scale-95"
+            className="w-full bg-indigo-600 text-white py-5 rounded-3xl font-black uppercase tracking-widest text-xs hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 mt-4 disabled:opacity-50 active:scale-95 shadow-xl shadow-indigo-600/20"
           >
-            {loading ? 'Processing...' : (isLogin ? <><LogIn size={20} /> Login</> : <><UserPlus size={20} /> Sign Up</>)}
+            {loading ? 'Processing...' : (isLogin ? <><LogIn size={18} /> Sign In</> : <><UserPlus size={18} /> Join Now</>)}
           </button>
         </form>
 
-        <div className="mt-6 flex items-center gap-4">
-          <div className="h-px bg-slate-200 flex-1"></div>
-          <span className="text-slate-400 text-sm uppercase tracking-wider font-medium">Or</span>
-          <div className="h-px bg-slate-200 flex-1"></div>
+        <div className="mt-10 flex items-center gap-4">
+          <div className="h-px bg-white/5 flex-1"></div>
+          <span className="text-slate-700 text-[10px] font-black uppercase tracking-widest">Connect with</span>
+          <div className="h-px bg-white/5 flex-1"></div>
         </div>
 
         <button 
           onClick={handleGoogleSignIn}
-          className="w-full border border-slate-200 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2 mt-6"
+          className="w-full bg-white/5 border border-white/5 text-white py-4 rounded-3xl font-bold hover:bg-white/10 transition-all flex items-center justify-center gap-3 mt-8 text-sm"
         >
-          <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
+          <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 grayscale opacity-70 group-hover:grayscale-0 group-hover:opacity-100" />
           Continue with Google
         </button>
 
-        <p className="text-center text-slate-500 mt-8">
-          {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
+        <p className="text-center text-slate-600 mt-10 text-xs font-bold uppercase tracking-wider">
+          {isLogin ? "New to the platform?" : "Joined us before?"}{' '}
           <button 
             onClick={() => setIsLogin(!isLogin)}
-            className="text-indigo-600 font-bold hover:underline"
+            className="text-indigo-500 hover:text-indigo-400 font-black"
           >
-            {isLogin ? 'Sign Up' : 'Login'}
+            {isLogin ? 'Create Account' : 'Sign In'}
           </button>
         </p>
       </motion.div>

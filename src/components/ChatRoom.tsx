@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Message, UserProfile, Chat } from '../types';
-import { Send, Image as ImageIcon, Video, Mic, Paperclip, MoreVertical, Phone, Video as VideoCall, ChevronLeft } from 'lucide-react';
+import { Send, Image as ImageIcon, Video, Mic, Paperclip, MoreVertical, Phone, Video as VideoCall, ChevronLeft, Smile } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface ChatRoomProps {
@@ -47,6 +47,55 @@ export default function ChatRoom({ chat, onBack }: ChatRoomProps) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const file = new File([audioBlob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
+        
+        setUploading(true);
+        try {
+          const storageRef = ref(storage, `chats/${chat.id}/${Date.now()}_voice.webm`);
+          await uploadBytes(storageRef, file);
+          const url = await getDownloadURL(storageRef);
+          await sendMessage(undefined, { url, type: 'audio' });
+        } catch (err) {
+          alert("Failed to send voice message");
+        } finally {
+          setUploading(false);
+          stream.getTracks().forEach(track => track.stop());
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (err) {
+      alert("Microphone access denied or not available");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
 
   const sendMessage = async (e?: React.FormEvent, mediaData?: { url: string, type: Message['mediaType'] }) => {
     e?.preventDefault();
@@ -95,12 +144,12 @@ export default function ChatRoom({ chat, onBack }: ChatRoomProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50">
+    <div className="flex flex-col h-full bg-[#000000]">
       {/* Header */}
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center px-6 justify-between shadow-sm z-10 sticky top-0">
-        <div className="flex items-center gap-3">
+      <header className="h-16 bg-[#000000] border-b border-white/5 flex items-center px-6 justify-between shadow-sm z-10 sticky top-0">
+        <div className="flex items-center gap-4">
           {onBack && (
-            <button onClick={onBack} className="md:hidden p-2 -ml-2 text-slate-400 hover:text-indigo-600 transition-colors">
+            <button onClick={onBack} className="md:hidden p-2 -ml-2 text-slate-400 hover:text-indigo-500 transition-colors">
               <ChevronLeft size={24} />
             </button>
           )}
@@ -108,71 +157,76 @@ export default function ChatRoom({ chat, onBack }: ChatRoomProps) {
             <img 
               src={chat.otherUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${chat.otherUser.uid}`} 
               alt={chat.otherUser.displayName}
-              className="w-10 h-10 rounded-full object-cover bg-indigo-100"
+              className="w-10 h-10 rounded-full object-cover bg-slate-900 border border-white/10"
             />
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+            {chat.otherUser.status === 'online' && (
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#000000] rounded-full"></div>
+            )}
           </div>
-          <div>
-            <h3 className="font-bold text-slate-800 text-sm leading-tight">{chat.otherUser.displayName}</h3>
-            <span className="text-[10px] text-green-500 font-bold uppercase tracking-wider">Active Now</span>
+          <div className="min-w-0">
+            <h3 className="font-bold text-white text-sm leading-tight truncate">{chat.otherUser.displayName}</h3>
+            {chat.otherUser.status === 'online' ? (
+              <span className="text-[10px] text-green-500 font-bold uppercase tracking-wider">Active Now</span>
+            ) : (
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Offline</span>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <button className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-all">
-            <Phone size={16} />
+        <div className="flex items-center gap-2">
+          <button className="w-9 h-9 rounded-full hover:bg-white/5 flex items-center justify-center text-indigo-500 transition-all">
+            <Phone size={18} />
           </button>
-          <button className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-all">
-            <VideoCall size={16} />
+          <button className="w-9 h-9 rounded-full hover:bg-white/5 flex items-center justify-center text-indigo-500 transition-all">
+            <VideoCall size={18} />
           </button>
-          <button className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-indigo-50 hover:text-indigo-600 transition-all">
-            <MoreVertical size={16} />
+          <button className="w-9 h-9 rounded-full hover:bg-white/5 flex items-center justify-center text-slate-500 transition-all">
+            <MoreVertical size={18} />
           </button>
         </div>
       </header>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6">
-        <div className="flex justify-center mb-4">
-          <span className="px-3 py-1 bg-slate-200 rounded-full text-[10px] font-bold text-slate-500 uppercase tracking-widest">Today</span>
-        </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
         {messages.map((msg, idx) => {
           const isMe = msg.senderId === auth.currentUser?.uid;
           
           return (
-            <div key={msg.id} className={`flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-3`}>
-              <img 
-                src={isMe ? (auth.currentUser?.photoURL || undefined) : (chat.otherUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${chat.otherUser.uid}`)} 
-                alt=""
-                className="w-8 h-8 rounded-full shadow-sm bg-slate-200 flex-shrink-0"
-              />
+            <div key={msg.id} className={`flex ${isMe ? 'flex-row-reverse' : 'flex-row'} items-end gap-2.5`}>
+              {!isMe && (
+                <img 
+                  src={chat.otherUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${chat.otherUser.uid}`} 
+                  alt=""
+                  className="w-7 h-7 rounded-full bg-slate-900 flex-shrink-0"
+                />
+              )}
               
               <motion.div 
                 initial={{ scale: 0.95, opacity: 0, y: 10 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                className={`max-w-[70%] group relative`}
+                className={`max-w-[75%] group relative`}
               >
-                <div className={`p-3 rounded-2xl shadow-sm ${
+                <div className={`px-4 py-2.5 rounded-[20px] shadow-sm ${
                   isMe 
-                    ? 'bg-indigo-600 text-white rounded-br-none shadow-indigo-100' 
-                    : 'bg-white text-slate-700 rounded-bl-none border border-slate-100'
+                    ? 'bg-indigo-600 text-white rounded-br-none' 
+                    : 'bg-[#262626] text-white rounded-bl-none'
                 }`}>
                   {msg.mediaUrl && (
-                    <div className="mb-2 rounded-xl overflow-hidden">
+                    <div className="mb-2 max-w-sm rounded-[14px] overflow-hidden">
                       {msg.mediaType === 'image' && (
-                        <img src={msg.mediaUrl || undefined} alt="sent image" className="max-h-60 w-full object-cover" />
+                        <img src={msg.mediaUrl || undefined} alt="sent image" className="max-h-80 w-full object-cover" />
                       )}
                       {msg.mediaType === 'video' && (
-                        <video src={msg.mediaUrl} controls className="max-h-60" />
+                        <video src={msg.mediaUrl} controls className="max-h-80" />
                       )}
                       {msg.mediaType === 'audio' && (
-                        <audio src={msg.mediaUrl} controls className="w-full" />
+                        <audio src={msg.mediaUrl} controls className="w-full h-10 brightness-90 invert grayscale" />
                       )}
                     </div>
                   )}
-                  {msg.text && <p className="text-sm leading-relaxed">{msg.text}</p>}
+                  {msg.text && <p className="text-[15px] leading-snug">{msg.text}</p>}
                 </div>
-                {msg.createdAt && (
-                  <span className={`text-[9px] mt-1 block font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity uppercase tracking-widest ${isMe ? 'text-right' : 'text-left'}`}>
+                {msg.createdAt && (idx === messages.length - 1 || messages[idx+1].senderId !== msg.senderId) && (
+                  <span className={`text-[9px] mt-1 block font-bold text-slate-600 uppercase tracking-widest ${isMe ? 'text-right pr-1' : 'text-left pl-1'}`}>
                     {new Date(msg.createdAt?.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 )}
@@ -184,55 +238,74 @@ export default function ChatRoom({ chat, onBack }: ChatRoomProps) {
       </div>
 
       {/* Input */}
-      <footer className="h-20 bg-white border-t border-slate-200 px-6 flex items-center gap-4">
-        <div className="flex gap-2">
-          <button 
-            type="button" 
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 text-indigo-500 hover:bg-slate-100 rounded-full transition-all"
-            title="Upload Files"
-          >
-            <Paperclip size={20} />
-          </button>
-          <input 
-            type="file" 
-            className="hidden" 
-            ref={fileInputRef} 
-            onChange={handleFileUpload}
-            accept="image/*,video/*,audio/*"
-          />
-          <button type="button" className="p-2 text-indigo-500 hover:bg-slate-100 rounded-full transition-all">
-            <Mic size={20} />
-          </button>
-          <button type="button" className="p-2 text-indigo-500 hover:bg-slate-100 rounded-full transition-all md:block hidden">
-            <ImageIcon size={20} />
-          </button>
-        </div>
-        
-        <div className="flex-1 relative">
-          <input 
-            type="text" 
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type a message..."
-            className="w-full bg-slate-100 border-none rounded-full py-3 px-6 text-sm focus:ring-2 focus:ring-indigo-500 transition-all text-slate-700"
-          />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xl cursor-default opacity-50">😊</span>
-          {uploading && (
-            <div className="absolute right-12 top-1/2 -translate-y-1/2">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
-            </div>
+      <footer className="bg-[#000000] p-4 flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <div className="flex bg-white/5 rounded-[24px] p-1.5 flex-1 items-center gap-1">
+            <button 
+              type="button" 
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2 text-indigo-500 hover:bg-white/5 rounded-full transition-all"
+            >
+              <Paperclip size={20} />
+            </button>
+            <input 
+              type="file" 
+              className="hidden" 
+              ref={fileInputRef} 
+              onChange={handleFileUpload}
+              accept="image/*,video/*,audio/*"
+            />
+            
+            <input 
+              type="text" 
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder={isRecording ? "Recording..." : "Type a message..."}
+              disabled={isRecording}
+              className="flex-1 bg-transparent border-none py-2 px-3 text-[15px] focus:ring-0 text-white placeholder:text-slate-600"
+            />
+            
+            <button type="button" className="p-2 text-indigo-500 hover:bg-white/5 rounded-full">
+              <Smile size={20} />
+            </button>
+          </div>
+
+          {newMessage.trim() || uploading ? (
+             <button 
+              type="submit" 
+              disabled={!newMessage.trim() && !uploading}
+              onClick={sendMessage}
+              className="w-11 h-11 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-indigo-500/20 transform active:scale-95 disabled:opacity-50 transition-all"
+            >
+              <Send size={20} />
+            </button>
+          ) : (
+            <button 
+              type="button" 
+              onMouseDown={startRecording}
+              onMouseUp={stopRecording}
+              onMouseLeave={stopRecording}
+              onTouchStart={startRecording}
+              onTouchEnd={stopRecording}
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
+                isRecording ? 'bg-red-500 animate-pulse scale-110 shadow-lg shadow-red-500/40' : 'bg-white/5 text-indigo-500'
+              }`}
+            >
+              <Mic size={22} className={isRecording ? 'text-white' : ''} />
+            </button>
           )}
         </div>
-
-        <button 
-          type="submit" 
-          disabled={!newMessage.trim() && !uploading}
-          onClick={sendMessage}
-          className="w-10 h-10 bg-indigo-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-indigo-100 transform active:scale-95 disabled:opacity-50 disabled:shadow-none transition-all"
-        >
-          <Send size={18} />
-        </button>
+        {uploading && (
+          <div className="px-4 py-1">
+            <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+               <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: '100%' }}
+                className="h-full bg-indigo-500"
+              />
+            </div>
+          </div>
+        )}
       </footer>
     </div>
   );

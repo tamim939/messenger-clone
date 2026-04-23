@@ -7,13 +7,15 @@ import {
   onSnapshot, 
   orderBy,
   getDoc,
+  getDocs,
   doc,
+  setDoc,
   addDoc,
   serverTimestamp
 } from 'firebase/firestore';
 import { UserProfile, Chat } from '../types';
-import { Search, Plus, MessageCircle, X } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Search, Plus, MessageCircle, X, Pin, Archive, BellOff, Users, Maximize2, Mail, Ban, Trash2, ShieldAlert } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface ChatListProps {
   onChatSelect: (chat: Chat & { otherUser: UserProfile }) => void;
@@ -71,6 +73,21 @@ export default function ChatList({ onChatSelect, activeChatId }: ChatListProps) 
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
+
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [selectedChatForActions, setSelectedChatForActions] = useState<(Chat & { otherUser: UserProfile }) | null>(null);
+
+  const handleTouchStart = (chat: Chat & { otherUser: UserProfile }) => {
+    const timer = setTimeout(() => {
+      setSelectedChatForActions(chat);
+      if (window.navigator.vibrate) window.navigator.vibrate(50);
+    }, 600);
+    setLongPressTimer(timer);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimer) clearTimeout(longPressTimer);
+  };
 
   const handleSearchAuto = async () => {
     const term = searchQuery.trim();
@@ -168,100 +185,105 @@ export default function ChatList({ onChatSelect, activeChatId }: ChatListProps) 
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      <div className="p-4 bg-white sticky top-0 z-10 border-b border-slate-50">
+    <div className="flex flex-col h-full bg-[#000000]">
+      <div className="p-4 bg-[#000000] sticky top-0 z-10 border-b border-white/5">
         <div className="relative group">
           <input 
             type="text" 
             placeholder="Search by name or @username..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-indigo-50/50 border border-indigo-100/50 rounded-2xl py-3 px-5 pr-20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-indigo-300 font-medium"
+            className="w-full bg-white/5 border border-white/5 rounded-2xl py-3 px-5 pr-20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-600 font-medium text-white"
           />
           <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
             {searchQuery && (
               <button 
                 onClick={() => { setSearchQuery(''); setSearchResults([]); }}
-                className="p-1 hover:bg-indigo-100 rounded-full text-indigo-400 hover:text-indigo-600 transition-all"
+                className="p-1 hover:bg-white/10 rounded-full text-slate-500 hover:text-white transition-all"
               >
                 <X size={16} />
               </button>
             )}
-            <Search size={18} className="text-indigo-400 group-focus-within:text-indigo-600 transition-colors" />
+            <Search size={18} className="text-slate-600 group-focus-within:text-indigo-500 transition-colors" />
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-0 py-2">
+      <div className="flex-1 overflow-y-auto px-0 py-2 no-scrollbar">
         {searchResults.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] px-4 mb-3">Search Results</h3>
+            <h3 className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.2em] px-4 mb-3">Search Results</h3>
             {searchResults.map(user => (
               <button 
                 key={user.uid}
                 onClick={() => startNewChat(user)}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-indigo-50 transition-colors group text-left border-l-4 border-transparent hover:border-indigo-500"
+                className="w-full flex items-center gap-4 px-4 py-3 hover:bg-white/5 transition-colors group text-left"
               >
                 <img 
                   src={user.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}`} 
                   alt={user.displayName}
-                  className="w-12 h-12 rounded-full border border-slate-100 shadow-sm"
+                  className="w-12 h-12 rounded-full border border-white/5 shadow-sm"
                 />
                 <div>
-                  <p className="font-bold text-slate-800 text-sm tracking-tight">{user.displayName}</p>
-                  <p className="text-[10px] text-indigo-600 font-bold uppercase tracking-wider">@{user.username || 'user'}</p>
+                  <p className="font-bold text-white text-sm tracking-tight">{user.displayName}</p>
+                  <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">@{user.username || 'user'}</p>
                 </div>
               </button>
             ))}
-            <div className="h-px bg-slate-100 my-4 mx-4"></div>
+            <div className="h-px bg-white/5 my-4 mx-4"></div>
           </div>
         )}
 
         {loading ? (
           <div className="flex items-center justify-center py-10">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
           </div>
         ) : chats.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center px-6">
-            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-200 mb-4">
+            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-slate-800 mb-4">
               <MessageCircle size={32} />
             </div>
-            <p className="text-slate-400 text-xs font-medium italic">No conversations yet.</p>
+            <p className="text-slate-600 text-xs font-medium italic">No conversations yet.</p>
           </div>
         ) : (
           <div className="space-y-0.5">
-            <p className="px-4 text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em] mb-4 mt-2">Active Messages</p>
+            <p className="px-4 text-[10px] font-bold text-slate-700 uppercase tracking-[0.2em] mb-4 mt-2">Active Messages</p>
             {chats.map(chat => (
               <button 
                 key={chat.id}
                 onClick={() => onChatSelect(chat)}
-                className={`w-full flex items-center gap-3 px-4 py-3 transition-all group relative border-l-4 ${
+                onMouseDown={() => handleTouchStart(chat)}
+                onMouseUp={handleTouchEnd}
+                onMouseLeave={handleTouchEnd}
+                onTouchStart={() => handleTouchStart(chat)}
+                onTouchEnd={handleTouchEnd}
+                className={`w-full flex items-center gap-4 px-4 py-3 transition-all group relative ${
                   activeChatId === chat.id 
-                    ? 'bg-indigo-50 border-indigo-500' 
-                    : 'hover:bg-slate-50 border-transparent'
+                    ? 'bg-indigo-500/10' 
+                    : 'hover:bg-white/5'
                 }`}
               >
                 <div className="relative flex-shrink-0">
                   <img 
                     src={chat.otherUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${chat.otherUser.uid}`} 
                     alt={chat.otherUser.displayName}
-                    className="w-12 h-12 rounded-full object-cover shadow-sm bg-slate-100"
+                    className="w-13 h-13 rounded-full object-cover shadow-sm bg-slate-100 border border-white/5"
                   />
                   {chat.otherUser.status === 'online' && (
-                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
+                    <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 border-2 border-[#000000] rounded-full"></div>
                   )}
                 </div>
                 <div className="flex-1 min-w-0 text-left">
                   <div className="flex justify-between items-baseline mb-0.5">
-                    <h4 className="font-bold text-slate-800 truncate text-sm tracking-tight">{chat.otherUser.displayName}</h4>
+                    <h4 className="font-bold text-white truncate text-sm tracking-tight">{chat.otherUser.displayName}</h4>
                     {chat.lastMessageAt && (
-                      <span className="text-[9px] text-slate-400 font-bold uppercase">
+                      <span className="text-[9px] text-slate-600 font-bold uppercase">
                         {new Date(chat.lastMessageAt?.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     )}
                   </div>
-                  <p className={`text-[12px] truncate leading-tight ${activeChatId === chat.id ? 'text-indigo-600 font-bold' : 'text-slate-500 font-medium italic'}`}>
-                    {chat.lastMessage || 'Start a conversation...'}
+                  <p className={`text-xs truncate ${activeChatId === chat.id ? 'text-white font-bold' : 'text-slate-500 font-medium'}`}>
+                    {chat.lastMessage || 'No messages yet'}
                   </p>
                 </div>
               </button>
@@ -269,6 +291,75 @@ export default function ChatList({ onChatSelect, activeChatId }: ChatListProps) 
           </div>
         )}
       </div>
+
+      {/* Bottom Sheet Actions */}
+      <AnimatePresence>
+        {selectedChatForActions && (
+          <>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedChatForActions(null)}
+              className="fixed inset-0 bg-black/60 z-[60] backdrop-blur-[2px]"
+            />
+            <motion.div 
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed bottom-0 inset-x-0 bg-[#1c1c1e] z-[70] rounded-t-[32px] overflow-hidden max-h-[85vh] flex flex-col"
+            >
+              {/* Handle */}
+              <div className="w-full flex justify-center p-3">
+                <div className="w-10 h-1.5 bg-white/10 rounded-full" />
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-4 space-y-1">
+                <div className="flex items-center gap-4 px-4 py-4 mb-2 border-b border-white/5">
+                   <img 
+                    src={selectedChatForActions.otherUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedChatForActions.otherUser.uid}`} 
+                    alt="" 
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <h3 className="font-bold text-lg text-white">{selectedChatForActions.otherUser.displayName}</h3>
+                </div>
+
+                <ActionButton icon={<Pin size={20} />} label="Pin" />
+                <ActionButton icon={<Archive size={20} />} label="Archive" />
+                <ActionButton icon={<BellOff size={20} />} label="Mute" />
+                <ActionButton icon={<Users size={20} />} label={`Create group chat with ${selectedChatForActions.otherUser.displayName.split(' ')[0]}`} />
+                <ActionButton icon={<Maximize2 size={20} />} label="Open chat head" />
+                <ActionButton icon={<Mail size={20} />} label="Mark as unread" />
+                <ActionButton icon={<ShieldAlert size={20} />} label="Restrict" />
+                <ActionButton icon={<Ban size={20} />} label="Block" />
+                <ActionButton icon={<Trash2 size={20} />} label="Delete" color="text-red-500" onClick={() => setSelectedChatForActions(null)} />
+              </div>
+
+              <div className="p-4 bg-[#1c1c1e]">
+                <button 
+                  onClick={() => setSelectedChatForActions(null)}
+                  className="w-full py-4 bg-white/5 text-white font-bold rounded-2xl hover:bg-white/10 transition-all"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+function ActionButton({ icon, label, color = "text-white", onClick }: { icon: any, label: string, color?: string, onClick?: () => void }) {
+  return (
+    <button 
+      onClick={onClick}
+      className="w-full flex items-center gap-4 px-4 py-3.5 hover:bg-white/5 rounded-xl transition-all text-left"
+    >
+      <div className={color}>{icon}</div>
+      <span className={`text-[15px] font-medium ${color}`}>{label}</span>
+    </button>
   );
 }

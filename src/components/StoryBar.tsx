@@ -81,29 +81,29 @@ export default function StoryBar() {
   };
 
   return (
-    <div className="py-4 px-2 flex items-center gap-4 overflow-x-auto no-scrollbar bg-white border-b border-slate-50">
+    <div className="py-4 px-2 flex items-center gap-4 overflow-x-auto no-scrollbar bg-[#000000] border-b border-white/5">
       {/* Create Story */}
       <div className="flex-shrink-0 flex flex-col items-center gap-1.5 w-20">
         <div 
           onClick={() => fileInputRef.current?.click()}
-          className="relative w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center cursor-pointer border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 transition-all group overflow-hidden"
+          className="relative w-16 h-16 rounded-full bg-white/5 flex items-center justify-center cursor-pointer border-2 border-dashed border-white/10 hover:border-indigo-500 hover:bg-indigo-500/10 transition-all group overflow-hidden"
         >
           {uploading ? (
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-500"></div>
           ) : (
             <>
               {auth.currentUser?.photoURL ? (
                 <img src={auth.currentUser.photoURL || undefined} alt="" className="w-full h-full object-cover opacity-50 group-hover:opacity-30" />
               ) : (
-                <Plus size={24} className="text-slate-400 group-hover:text-indigo-500" />
+                <Plus size={24} className="text-slate-600 group-hover:text-indigo-500" />
               )}
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                 <Plus size={24} className="text-indigo-600" />
+                 <Plus size={24} className="text-white" />
               </div>
             </>
           )}
         </div>
-        <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">You</span>
+        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">You</span>
         <input 
           type="file" 
           hidden 
@@ -120,14 +120,14 @@ export default function StoryBar() {
           className="flex-shrink-0 flex flex-col items-center gap-1.5 w-20"
           onClick={() => setSelectedStoryIndex(idx)}
         >
-          <div className="p-0.5 rounded-full border-2 border-indigo-500 cursor-pointer hover:scale-105 transition-transform bg-white">
+          <div className="p-0.5 rounded-full border-2 border-indigo-500 cursor-pointer hover:scale-105 transition-transform bg-[#000000]">
             <img 
               src={story.userPhotoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${story.userId}`} 
               alt={story.userDisplayName}
-              className="w-14 h-14 rounded-full object-cover border-2 border-white"
+              className="w-14 h-14 rounded-full object-cover border-2 border-[#000000]"
             />
           </div>
-          <span className="text-[10px] font-bold text-slate-800 truncate w-full text-center tracking-tight">
+          <span className="text-[10px] font-bold text-slate-400 truncate w-full text-center tracking-tight">
             {story.userDisplayName.split(' ')[0]}
           </span>
         </div>

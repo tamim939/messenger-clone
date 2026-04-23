@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { db, auth, storage } from '../lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { UserProfile } from '../types';
 import { X, Camera, Save, User as UserIcon, Tag, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
